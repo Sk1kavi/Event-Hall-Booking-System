@@ -1,4 +1,4 @@
-# 📌 Event Hall Booking Website
+# 📌 Event Hall Booking System
 
 ## 📖 Overview
 The **Event Hall Booking Website** is a full-stack web application that enables users to book event halls, hall owners to manage their listings, and admins to oversee transactions and approvals. The platform provides a **user-friendly interface** for seamless booking, secure payments, and efficient management of event spaces.
