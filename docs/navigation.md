@@ -1,0 +1,18 @@
+```mermaid
+graph TD;
+  A[Landing Page] --> B[Login/Register]
+  B --> C[Customer Login]
+  B --> D[Hall Owner Registration Requires Admin Approval]
+  B --> E[Admin Login Only Existing Admins Can Add New Admins]
+  C --> F[Customer Home Page]
+  F --> G[Event Hall Listings]
+  G --> H[Event Hall Details & Booking]
+  H --> I[Payment Processing Razorpay]
+  I --> J[Booking Confirmation]
+  J --> K[User Profile & Booking History]
+  D --> L[Hall Owner Dashboard Post-Approval]
+  L --> M[Manage Halls & View Bookings]
+  E --> N[Admin Panel]
+  N --> O[Approve/Reject Hall Listings]
+  N --> P[Manage Users  Halls & Transactions]
+  N --> Q[Add New Admins]
