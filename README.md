@@ -73,4 +73,14 @@ npm start     # Run React app
 | POST   | /api/halls/add         | Add a new event hall (Hall Owner) |
 | POST   | /api/bookings          | Create a new booking |
 
+# Login page
+![Login Page](./img/login.jpg)
+# Admin Dashboard 
+![Login Page](./img/admin.jpg)
+# Hall Owner Dashboard
+![Login Page](./img/dashboard.jpg)
+# Consumer Dashboard
+![Login Page](./img/event.jpg)
+# Booking page
+![Login Page](./img/book.jpg)
 
