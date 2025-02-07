@@ -74,13 +74,13 @@ npm start     # Run React app
 | POST   | /api/bookings          | Create a new booking |
 
 # Login page
-![Login Page](./img/login.jpg)
+![Login Page](./img/login.JPG)
 # Admin Dashboard 
-![Login Page](./img/admin.jpg)
+![Admin Dashboard](./img/admin.JPG)
 # Hall Owner Dashboard
-![Login Page](./img/dashboard.jpg)
+![Hall Owner Dashboard](./img/dashboard.JPG)
 # Consumer Dashboard
-![Login Page](./img/event.jpg)
+![Consumer Dashboard](./img/event.JPG)
 # Booking page
-![Login Page](./img/book.jpg)
+![Booking page](./img/book.JPG)
 
