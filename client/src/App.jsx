@@ -1,9 +1,9 @@
-function App() {
-  return (
+import LandingPage from '../pages/LandingPage';
+import './App.css';
+export default function App(){
+  return(
     <>
-    <h1>hello world</h1>
+      <LandingPage/>
     </>
-  )
-}
-
-export default App
+  );
+};
