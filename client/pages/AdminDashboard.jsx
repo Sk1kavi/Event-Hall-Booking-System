@@ -168,7 +168,6 @@ const AdminDashboard = () => {
             {halls.map((hall) => (
               <li key={hall._id} className="border p-4 rounded shadow space-y-2">
                 <p><strong>{hall.name}</strong> (Capacity: {hall.capacity})</p>
-                <p>Owner: {hall.ownerName}, Contact: {hall.contactNumber}</p>
                 <p>Price: ₹{hall.price}/day</p>
                 <p>Address: {hall.address}</p>
                 <p>Amenities: {(hall.amenities || []).join(', ')}</p>

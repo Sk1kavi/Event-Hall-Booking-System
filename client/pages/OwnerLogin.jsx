@@ -28,6 +28,8 @@ const OwnerLogin = () => {
 
             if (data.success) {
                 alert("Login successful");
+                localStorage.setItem("ownerEmail", data.owner.email);
+                localStorage.setItem("ownerId", data.owner._id.toString());
                 setEmail("");
                 setPassword("");
                 navigate("/ownerdashboard");

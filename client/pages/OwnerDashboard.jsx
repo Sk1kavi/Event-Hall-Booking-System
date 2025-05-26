@@ -1,10 +1,11 @@
 import { useEffect,useState } from 'react';
 
 export default function OwnerDashboard() {
+  const [owner, setOwner] = useState(null);
+  const [fetching, setFetching] = useState(true);
+  const ownerId = localStorage.getItem("ownerId");
   const [showForm, setShowForm] = useState(false);
   const [hallName, setHallName] = useState('');
-  const [ownerName, setOwnerName] = useState('');
-  const [contactNumber, setContactNumber] = useState('');
   const [capacity, setCapacity] = useState('');
   const [address, setAddress] = useState('');
   const [price, setPrice] = useState('');
@@ -30,15 +31,14 @@ export default function OwnerDashboard() {
   const handleAddHall = async (e) => {
     e.preventDefault();
 
-    if (!hallName || !ownerName || !contactNumber || !capacity || isNaN(capacity) || !price) {
+    if (!hallName  || !capacity || isNaN(capacity) || !price) {
       alert('Please fill in all required fields with valid data.');
       return;
     }
 
     const newHall = {
       name: hallName.trim(),
-      ownerName,
-      contactNumber,
+      owner_id: ownerId,
       capacity: Number(capacity),
       address,
       price: Number(price),
@@ -60,8 +60,6 @@ export default function OwnerDashboard() {
         setHalls((prev) => [...prev, savedHall]); // or just newHall if backend doesn't return data
         // Reset form
         setHallName('');
-        setOwnerName('');
-        setContactNumber('');
         setCapacity('');
         setAddress('');
         setPrice('');
@@ -81,7 +79,7 @@ export default function OwnerDashboard() {
     const fetchHalls = async () => {
       setLoading(true);
       try {
-        const response = await fetch("http://localhost:5000/halls/list");
+        const response = await fetch(`http://localhost:5000/halls/list/${ownerId}`);
         const data = await response.json();
         if (data.success) {
           setHalls(data.halls);
@@ -97,14 +95,61 @@ export default function OwnerDashboard() {
      useEffect(() => {
         fetchHalls();
       }, []);
-    if (loading) return <p>Loading halls...</p>;
+
+    //profile section
+     useEffect(() => {
+    const fetchOwner = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/owner/${ownerId}`);
+        const data = await res.json();
+        if (data.success) {
+          setOwner(data.owner);
+        } else {
+          alert("Failed to load profile");
+        }
+      } catch (error) {
+        console.error("Error loading profile:", error);
+      }
+      setFetching(false);
+    };
+
+    fetchOwner();
+  }, [ownerId]);
+
+  if (fetching) return <p>Loading your profile...</p>;
+  if (loading) return <p>Loading halls...</p>;
 
   return (
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">Your Profile</h2>
+      <div className="bg-gray-100 p-4 rounded shadow">
+        <p><strong>Name:</strong> {owner.name}</p>
+        <p><strong>Email:</strong> {owner.email}</p>
+        <p><strong>Phone:</strong> {owner.number}</p>
+      </div>
     <div className="p-6">
+       <h3 className="text-xl font-semibold mb-4">Registered Halls</h3>
+      {halls.length === 0 ? (
+        <p className="text-gray-500">No halls registered yet.</p>
+      ) : (
+        <ul className="space-y-3">
+          {halls.map((hall, index) => (
+            <li key={index} className="bg-gray-100 p-4 rounded shadow">
+              <p><strong>{hall.name}</strong> (Capacity: {hall.capacity})</p>
+              {/*<p>Owner: {hall.ownerName}, Contact: {hall.contactNumber}</p>*/}
+              <p>Price: ₹{hall.price}/day</p>
+              <p>Address: {hall.address}</p>
+              <p>Amenities: {(hall.amenities || []).join(', ')}</p>
+              <p>Operating Days: {(hall.daysOpen || []).join(', ')}</p>
+
+            </li>
+          ))}
+        </ul>
+      )}
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+          className=" bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
         >
           Register a New Hall
         </button>
@@ -118,22 +163,7 @@ export default function OwnerDashboard() {
             required
             className="w-full px-3 py-2 border rounded"
           />
-          <input
-            type="text"
-            placeholder="Owner Name"
-            value={ownerName}
-            onChange={(e) => setOwnerName(e.target.value)}
-            required
-            className="w-full px-3 py-2 border rounded"
-          />
-          <input
-            type="tel"
-            placeholder="Contact Number"
-            value={contactNumber}
-            onChange={(e) => setContactNumber(e.target.value)}
-            required
-            className="w-full px-3 py-2 border rounded"
-          />
+          
           <input
             type="text"
             placeholder="Address"
@@ -198,25 +228,7 @@ export default function OwnerDashboard() {
           </button>
         </form>
       )}
-
-      <h3 className="text-xl font-semibold mb-4">Registered Halls</h3>
-      {halls.length === 0 ? (
-        <p className="text-gray-500">No halls registered yet.</p>
-      ) : (
-        <ul className="space-y-3">
-          {halls.map((hall, index) => (
-            <li key={index} className="bg-gray-100 p-4 rounded shadow">
-              <p><strong>{hall.name}</strong> (Capacity: {hall.capacity})</p>
-              <p>Owner: {hall.ownerName}, Contact: {hall.contactNumber}</p>
-              <p>Price: ₹{hall.price}/day</p>
-              <p>Address: {hall.address}</p>
-              <p>Amenities: {(hall.amenities || []).join(', ')}</p>
-              <p>Operating Days: {(hall.daysOpen || []).join(', ')}</p>
-
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
+        </div>
   );
 }

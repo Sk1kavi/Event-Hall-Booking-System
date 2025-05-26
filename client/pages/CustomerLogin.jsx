@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import CustomerRegister from './CustomerRegister.jsx'; 
+import {useNavigate} from "react-router-dom";
 
 const CustomerLogin = () => {
   const [showRegister, setShowRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const navigate=useNavigate();
+
 
   if (showRegister) {
     return <CustomerRegister />;
@@ -26,8 +29,10 @@ const CustomerLogin = () => {
 
       if (data.success) {
         alert("Login successful");
+        localStorage.setItem("customerId", data.customer._id);
         setEmail("");
         setPassword("");
+        navigate("/customerdashboard");
       } else {
         alert(data.message || "Login failed");
       }

@@ -78,12 +78,12 @@ app.post("/customerlogin", async (req, res) => {
 
     try {
         const db = client.db(dbName);
-        const adminCollection = db.collection("customers");
+        const customerCollection = db.collection("customers");
 
-        const admin = await adminCollection.findOne({ email, password });
+        const customer = await customerCollection.findOne({ email, password });
 
-        if (admin) {
-            res.json({ success: true, message: "Login successful", admin });
+        if (customer) {
+            res.json({ success: true, message: "Login successful", customer });
         } else {
             res.status(401).json({ success: false, message: "Invalid email or password" });
         }
@@ -165,8 +165,7 @@ app.post("/ownerregister", async (req, res) => {
 app.post("/hallregister", async (req, res) => {
   const {
     name,
-    ownerName,
-    contactNumber,
+    owner_id,
     capacity,
     address,
     price,
@@ -179,14 +178,13 @@ app.post("/hallregister", async (req, res) => {
     const hallCollection = db.collection("applied_halls");
 
     // Basic validation 
-    if (!name || !ownerName || !contactNumber || !capacity || !price) {
+    if (!name || !owner_id  || !capacity || !price) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
     const result = await hallCollection.insertOne({
       name: name.trim(),
-      ownerName: ownerName.trim(),
-      contactNumber: contactNumber.trim(),
+      owner_id: owner_id,
       capacity: Number(capacity),
       address: address?.trim() || "",
       price: Number(price),
@@ -342,6 +340,98 @@ app.get("/halls/list", async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
+
+//Owner Dashboard Route 
+//fetch owner details for profile
+app.get("/owner/:ownerId", async (req, res) => {
+  const { ownerId } = req.params;
+  try {
+    const db = client.db("hallbooking");
+    const owners = db.collection("approved_owners");
+    const owner = await owners.findOne({ _id: new ObjectId(ownerId) });
+
+    if (owner) {
+      res.json({ success: true, owner });
+    } else {
+      res.status(404).json({ success: false, message: "Owner not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching owner profile:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+// get owners approved halls
+app.get("/halls/list/:ownerId", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const hallCollection = db.collection("approved_halls");
+    
+
+    const halls = await hallCollection.find({ owner_id: req.params.ownerId }).toArray();
+    res.json({ success: true, halls });
+  } catch (error) {
+    console.error("Error fetching halls:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+
+//fetch customer details for profile
+app.get("/customer/:customerId", async (req, res) => {
+  const { customerId } = req.params;
+  try {
+    const db = client.db("hallbooking");
+    const customers = db.collection("customers");
+    const customer = await customers.findOne({ _id: new ObjectId(customerId) });
+
+    if (customer) {
+      res.json({ success: true, customer });
+    } else {
+      res.status(404).json({ success: false, message: "customer not found" });
+    }
+  } catch (error) {
+    console.error("Error fetching customer profile:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+app.post("/bookings", async (req, res) => {
+    const { hallId, customerId, date, occasion } = req.body;
+
+    try {
+        const db = client.db("hallbooking");
+        const bookingsCollection = db.collection("bookings");
+
+        // Check for existing booking on the same date for the same hall
+        const existingBooking = await bookingsCollection.findOne({
+            hallId,
+            date
+        });
+
+        if (existingBooking) {
+            return res.status(400).json({ success: false, message: "Selected date is already booked for this hall." });
+        }
+
+        const result = await bookingsCollection.insertOne({
+            hallId,
+            customerId,
+            date,
+            occasion,
+            createdAt: new Date()
+        });
+
+        if (result.acknowledged) {
+            res.json({ success: true, message: "Booking successful", bookingId: result.insertedId });
+        } else {
+            res.status(500).json({ success: false, message: "Failed to create booking" });
+        }
+    } catch (error) {
+        console.error("Error while creating booking:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+});
+
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
