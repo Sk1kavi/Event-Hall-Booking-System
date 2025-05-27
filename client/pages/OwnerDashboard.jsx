@@ -1,6 +1,9 @@
 import { useEffect,useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function OwnerDashboard() {
+  const [selectedBookings, setSelectedBookings] = useState([]);
+const [showBookings, setShowBookings] = useState(false);
   const [owner, setOwner] = useState(null);
   const [fetching, setFetching] = useState(true);
   const ownerId = localStorage.getItem("ownerId");
@@ -16,6 +19,11 @@ export default function OwnerDashboard() {
   const amenitiesOptions = ['Parking', 'Wi-Fi', 'Air Conditioning', 'Stage', 'Catering'];
   const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
+    const navigate = useNavigate();
+    const handleLogout = () => {
+    localStorage.clear(); 
+    navigate("/");        
+  };
   const toggleAmenity = (amenity) => {
     setAmenities((prev) =>
       prev.includes(amenity) ? prev.filter((a) => a !== amenity) : [...prev, amenity]
@@ -75,7 +83,22 @@ export default function OwnerDashboard() {
     }
     fetchHalls(); // Refresh the list of halls
   };
-  
+  const handleViewBookings = async (hallId) => {
+  try {
+    const res = await fetch(`http://localhost:5000/bookings/byHall/${hallId}`);
+    const data = await res.json();
+
+    if (data.success) {
+      setSelectedBookings(data.bookingsWithCustomer);
+      setShowBookings(true);
+    } else {
+      alert("Failed to fetch bookings");
+    }
+  } catch (err) {
+    console.error("Error fetching bookings:", err);
+  }
+ 
+};
     const fetchHalls = async () => {
       setLoading(true);
       try {
@@ -120,6 +143,15 @@ export default function OwnerDashboard() {
   if (loading) return <p>Loading halls...</p>;
 
   return (
+     <div>
+      <div className="flex justify-end p-4">
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+        >
+          Logout
+        </button>
+      </div>
     <div className="p-4">
       <h2 className="text-xl font-bold mb-4">Your Profile</h2>
       <div className="bg-gray-100 p-4 rounded shadow">
@@ -141,11 +173,36 @@ export default function OwnerDashboard() {
               <p>Address: {hall.address}</p>
               <p>Amenities: {(hall.amenities || []).join(', ')}</p>
               <p>Operating Days: {(hall.daysOpen || []).join(', ')}</p>
-
+               <button
+                  onClick={() => handleViewBookings(hall._id)}
+                  className="mt-2 bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded"
+                >
+                  View Bookings
+                </button>
             </li>
           ))}
         </ul>
       )}
+      {showBookings && (
+  <div className="mt-6 bg-white p-4 rounded-xl shadow-lg">
+    <h3 className="text-lg font-bold mb-4">Bookings</h3>
+    {selectedBookings.length === 0 ? (
+      <p>No bookings found.</p>
+    ) : (
+      <ul className="space-y-2">
+        {selectedBookings.map((booking, index) => (
+          <li key={index} className="border p-3 rounded shadow">
+            <p><strong>Date:</strong> {booking.date}</p>
+            <p><strong>Occasion:</strong> {booking.occasion}</p>
+            <p><strong>Booked By:</strong> {booking.customer.name} ({booking.customer.email})</p>
+            <p><strong>Phone:</strong> {booking.customer.number}</p>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+)}
+
       {!showForm ? (
         <button
           onClick={() => setShowForm(true)}
@@ -230,5 +287,7 @@ export default function OwnerDashboard() {
       )}
     </div>
         </div>
+            </div>
+
   );
 }

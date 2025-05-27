@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState  } from "react";
+import { useNavigate } from "react-router-dom";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -13,6 +14,11 @@ const CustomerDashboard = () => {
   const [occasion, setOccasion] = useState('');
   const [customer, setCustomer] = useState(null);
   const [fetching, setFetching] = useState(true);
+  const navigate = useNavigate();
+  const handleLogout = () => {
+  localStorage.clear(); 
+  navigate("/");        
+};
 
   const fetchHalls = async () => {
     setLoading(true);
@@ -89,6 +95,15 @@ const CustomerDashboard = () => {
   if (loading) return <p className="text-center mt-10">Loading halls...</p>;
 
   return (
+     <div>
+      <div className="flex justify-end p-4">
+        <button
+          onClick={handleLogout}
+          className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 transition"
+        >
+          Logout
+        </button>
+      </div>
     <div className="p-6">
        <h2 className="text-xl font-bold mb-4">Your Profile</h2>
       <div className="bg-gray-100 p-4 rounded shadow">
@@ -186,6 +201,8 @@ const CustomerDashboard = () => {
 )}
 
     </div>
+        </div>
+
   );
 };
 

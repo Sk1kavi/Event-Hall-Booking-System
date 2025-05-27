@@ -432,6 +432,39 @@ app.post("/bookings", async (req, res) => {
     }
 });
 
+//Fetch bookings
+app.get("/bookings/byHall/:hallId", async (req, res) => {
+  const { hallId } = req.params;
+
+  try {
+    const db = client.db("hallbooking");
+    const bookingsCollection = db.collection("bookings");
+    const customersCollection = db.collection("customers");
+
+    // TEMP log
+    const rawBookings = await bookingsCollection.find().toArray();
+
+    // Check query
+    const bookings = await bookingsCollection.find({ hallId}).toArray();
+
+    const bookingsWithCustomer = await Promise.all(bookings.map(async (booking) => {
+      const customer = await customersCollection.findOne({ _id: new ObjectId(booking.customerId) });
+      return {
+        ...booking,
+        customer: customer ? {
+          name: customer.name,
+          email: customer.email,
+          number: customer.number
+        } : {}
+      };
+    }));
+
+    res.json({ success: true, bookingsWithCustomer });
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
 
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
