@@ -9,7 +9,7 @@ const AdminLogin = () => {
   const handleOnSubmit = async (e) => {
     e.preventDefault();
     try {
-      const result = await fetch("http://localhost:5000/adminlogin", {
+      const result = await fetch("https://event-hall-booking-system.onrender.com/adminlogin", {
         method: "POST",
         body: JSON.stringify({ email, password }),
         headers: {

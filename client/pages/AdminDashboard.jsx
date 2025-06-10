@@ -11,7 +11,7 @@ const AdminDashboard = () => {
     navigate("/");
   }
 
-  const BASE_URL = "http://localhost:5000";
+  const BASE_URL = "https://event-hall-booking-system.onrender.com";
 
   const fetchOwners = async () => {
     setLoading(true);

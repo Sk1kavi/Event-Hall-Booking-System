@@ -55,7 +55,7 @@ export default function OwnerDashboard() {
     };
 
     try {
-      const response = await fetch('http://localhost:5000/hallregister', {
+      const response = await fetch('https://event-hall-booking-system.onrender.com/hallregister', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +84,7 @@ export default function OwnerDashboard() {
   };
   const handleViewBookings = async (hallId) => {
     try {
-      const res = await fetch(`http://localhost:5000/bookings/byHall/${hallId}`);
+      const res = await fetch(`https://event-hall-booking-system.onrender.com/bookings/byHall/${hallId}`);
       const data = await res.json();
 
       if (data.success) {
@@ -100,7 +100,7 @@ export default function OwnerDashboard() {
   const fetchHalls = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/halls/list/${ownerId}`);
+      const response = await fetch(`https://event-hall-booking-system.onrender.com/halls/list/${ownerId}`);
       const data = await response.json();
       if (data.success) {
         setHalls(data.halls);
@@ -120,7 +120,7 @@ export default function OwnerDashboard() {
   useEffect(() => {
     const fetchOwner = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/owner/${ownerId}`);
+        const res = await fetch(`https://event-hall-booking-system.onrender.com/owner/${ownerId}`);
         const data = await res.json();
         if (data.success) {
           setOwner(data.owner);
