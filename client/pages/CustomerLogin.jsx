@@ -16,7 +16,7 @@ const CustomerLogin = () => {
   const handleOnSubmit = async (e) => {
     e.preventDefault();
     try {
-      const result = await fetch("http://localhost:5000/customerlogin", {
+      const result = await fetch("https://event-hall-booking-system.onrender.com/customerlogin", {
         method: "POST",
         body: JSON.stringify({ email, password }),
         headers: {

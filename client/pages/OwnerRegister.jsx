@@ -17,7 +17,7 @@ const OwnerRegister = () => {
      const handleOnSubmit = async (e) => {
         e.preventDefault();
         try {
-            const response = await fetch("http://localhost:5000/ownerregister", {
+            const response = await fetch("https://event-hall-booking-system.onrender.com/ownerregister", {
                 method: "POST",
                 body: JSON.stringify({ name, email, password, number, address ,hallname,location}),
                 headers: {

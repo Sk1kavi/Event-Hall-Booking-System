@@ -23,7 +23,7 @@ const CustomerDashboard = () => {
   const fetchHalls = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/halls/list");
+      const response = await fetch("https://event-hall-booking-system.onrender.com/halls/list");
       const data = await response.json();
       if (data.success) {
         setHalls(data.halls);
@@ -47,7 +47,7 @@ const CustomerDashboard = () => {
       customerId: customerId,
     };
 
-    const res = await fetch("http://localhost:5000/bookings", {
+    const res = await fetch("https://event-hall-booking-system.onrender.com/bookings", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(bookingData),
@@ -73,7 +73,7 @@ const CustomerDashboard = () => {
     const fetchCustomer = async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/customer/${customerId}`
+          `https://event-hall-booking-system.onrender.com/customer/${customerId}`
         );
         const data = await res.json();
         if (data.success) {
