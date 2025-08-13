@@ -466,6 +466,36 @@ app.get("/bookings/byHall/:hallId", async (req, res) => {
   }
 });
 
+// Fetch bookings by customer
+app.get("/bookings/byCustomer/:customerId", async (req, res) => {
+    const { customerId } = req.params;
+    try{
+        const db = client.db("hallbooking");
+        const bookingsCollection = db.collection("bookings");
+        const hallsCollection = db.collection("approved_halls");
+
+        const bookings = await bookingsCollection.find({ customerId }).toArray();
+
+        const bookingsWithHallDetails = await Promise.all(bookings.map(async (booking) => {
+            const hall = await hallsCollection.findOne({ _id: new ObjectId(booking.hallId) });
+            return {
+                ...booking,
+                hall: hall ? {
+                    name: hall.name,
+                    address: hall.address,
+                    price: hall.price
+                } : {}
+            };
+        }));
+
+        res.json({ success: true, bookingsWithHallDetails });
+    }
+    catch (error) {
+        console.error("Error fetching bookings by customer:", error);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server is running on port${PORT}`);
 });
