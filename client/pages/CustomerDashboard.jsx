@@ -18,6 +18,7 @@ const CustomerDashboard = () => {
   const [favourites, setFavourites] = useState([]);
   const [isBookingsOpen, setIsBookingsOpen] = useState(false);
   const [isFavouritesOpen, setIsFavouritesOpen] = useState(false);
+const [favouriteHallIds, setFavouriteHallIds] = useState([]);
 
 
   const handleLogout = () => {
@@ -26,7 +27,7 @@ const CustomerDashboard = () => {
   };
   const handleViewBookings = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/bookings/byCustomer/${customer._id}`);
+      const res = await fetch(`http://event-hall-booking-system.onrender.com/bookings/byCustomer/${customer._id}`);
       const data = await res.json();
       setBookings(data.bookingsWithHallDetails || []);
       console.log(bookings);
@@ -35,12 +36,28 @@ const CustomerDashboard = () => {
       console.error("Error fetching bookings:", error);
     }
   };
+  useEffect(() => {
+  const fetchFavourites = async () => {
+    try {
+      const res = await fetch(`http://event-hall-booking-system.onrender.com/favourites/byCustomer/${customerId}`);
+      const data = await res.json();
+      if (data.success) {
+        const ids = data.favouritesWithHallDetails.map(f => f.hallId);
+        setFavouriteHallIds(ids);
+      }
+    } catch (err) {
+      console.error("Error fetching favourites:", err);
+    }
+  };
 
+  fetchFavourites();
+}, [customerId]);
   const handleViewFavourites = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/favourites/byCustomer/${customer._id}`);
+      const res = await fetch(`http://event-hall-booking-system.onrender.com/favourites/byCustomer/${customer._id}`);
       const data = await res.json();
-      setFavourites(data);
+      console.log(data);
+      setFavourites(data.favouritesWithHallDetails || []);
       setIsFavouritesOpen(true);
     } catch (error) {
       console.error("Error fetching favourites:", error);
@@ -62,6 +79,47 @@ const CustomerDashboard = () => {
     }
     setLoading(false);
   };
+  // Toggle Favourite Handler
+const handleToggleFavourite = async (hallId) => {
+  try {
+    const res = await fetch(`http://event-hall-booking-system.onrender.com/favourites/toggle`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        customerId: customer._id,
+        hallId: hallId
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      setFavourites((prev) => {
+        // If hall is already in favourites → remove it, else add it
+        if (prev.some((fav) => fav.hallId === hallId)) {
+          return prev.filter((fav) => fav.hallId !== hallId);
+        } else {
+          return [...prev, { hallId, hallName: halls.find(h => h._id === hallId)?.name }];
+        }
+      });
+      setFavouriteHallIds((prev) =>
+        prev.includes(hallId)
+          ? prev.filter((id) => id !== hallId)
+          : [...prev, hallId]
+      );
+    } else {
+      alert(data.message || "Failed to update favourites");
+    }
+  } catch (error) {
+    console.error("Error toggling favourite:", error);
+  }
+};
+
+// Check if hall is favourite
+const isFavourite = (hallId) => {
+  return favouriteHallIds.includes(hallId);
+};
+
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
@@ -135,21 +193,21 @@ const CustomerDashboard = () => {
     );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-200">
-      {/* Header */}
-      <div className="flex justify-between items-center p-6 bg-white shadow-md">
-        <h1 className="text-3xl font-extrabold text-blue-700 tracking-tight">
-          Customer Dashboard
-        </h1>
-        <button
-          onClick={handleLogout}
-          className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-2 rounded-full shadow hover:scale-105 transition"
-        >
-          Logout
-        </button>
-      </div>
+  <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-200">
+    {/* Header */}
+    <div className="flex justify-between items-center p-6 bg-white shadow-md">
+      <h1 className="text-3xl font-extrabold text-blue-700 tracking-tight">
+        Customer Dashboard
+      </h1>
+      <button
+        onClick={handleLogout}
+        className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-6 py-2 rounded-full shadow hover:scale-105 transition"
+      >
+        Logout
+      </button>
+    </div>
 
-      <div className="max-w-4xl mx-auto mt-10">
+    <div className="max-w-4xl mx-auto mt-10">
       <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col md:flex-row items-center gap-8">
         {/* Profile Icon */}
         <div className="flex-shrink-0">
@@ -188,40 +246,35 @@ const CustomerDashboard = () => {
         </div>
       </div>
 
-     {/* Bookings Modal */}
-{isBookingsOpen && (
-  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-2xl w-[28rem] max-h-[80vh] overflow-y-auto shadow-lg">
-      <h3 className="text-xl font-bold mb-4">Your Bookings</h3>
-
-      {bookings.length > 0 ? (
-        <ul className="space-y-3">
-          {bookings.map((b, idx) => (
-            <li
-              key={idx}
-              className="p-3 bg-gray-100 rounded-lg shadow-sm"
+      {/* Bookings Modal */}
+      {isBookingsOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl w-[28rem] max-h-[80vh] overflow-y-auto shadow-lg">
+            <h3 className="text-xl font-bold mb-4">Your Bookings</h3>
+            {bookings.length > 0 ? (
+              <ul className="space-y-3">
+                {bookings.map((b, idx) => (
+                  <li key={idx} className="p-3 bg-gray-100 rounded-lg shadow-sm">
+                    <span className="font-semibold">Hall:</span> {b.hall?.name} <br />
+                    <span className="font-semibold">Address:</span> {b.hall?.address} <br />
+                    <span className="font-semibold">Price:</span> ₹{b.hall?.price} <br />
+                    <span className="font-semibold">Date:</span> {b.date} <br />
+                    <span className="font-semibold">Occasion:</span> {b.occasion}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500">No bookings found.</p>
+            )}
+            <button
+              onClick={() => setIsBookingsOpen(false)}
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
             >
-              <span className="font-semibold">Hall:</span> {b.hall?.name} <br />
-              <span className="font-semibold">Address:</span> {b.hall?.address} <br />
-              <span className="font-semibold">Price:</span> ₹{b.hall?.price} <br />
-              <span className="font-semibold">Date:</span> {b.date} <br />
-              <span className="font-semibold">Occasion:</span> {b.occasion}
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-gray-500">No bookings found.</p>
+              Close
+            </button>
+          </div>
+        </div>
       )}
-
-      <button
-        onClick={() => setIsBookingsOpen(false)}
-        className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
-      >
-        Close
-      </button>
-    </div>
-  </div>
-)}
 
       {/* Favourites Modal */}
       {isFavouritesOpen && (
@@ -231,11 +284,16 @@ const CustomerDashboard = () => {
             {favourites.length > 0 ? (
               <ul className="space-y-2">
                 {favourites.map((f, idx) => (
-                  <li
-                    key={idx}
-                    className="p-2 bg-gray-100 rounded-lg shadow-sm"
-                  >
-                    <span className="font-semibold">Hall:</span> {f.hallName}
+                  <li key={idx} className="p-3 bg-gray-100 rounded-lg shadow-sm">
+                    <div>
+                      <span className="font-semibold">Hall:</span> {f.hall?.name || "Unknown"}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Address:</span> {f.hall?.address || "N/A"}
+                    </div>
+                    <div>
+                      <span className="font-semibold">Price:</span> ₹{f.hall?.price || "N/A"}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -251,8 +309,6 @@ const CustomerDashboard = () => {
           </div>
         </div>
       )}
-    </div>
-  );
 
       {/* Halls Section */}
       <div className="max-w-7xl mx-auto mt-12 px-4">
@@ -260,9 +316,7 @@ const CustomerDashboard = () => {
           Available Event Halls
         </h3>
         {halls.length === 0 ? (
-          <p className="text-center text-gray-500">
-            No halls available at the moment.
-          </p>
+          <p className="text-center text-gray-500">No halls available at the moment.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
             {halls.map((hall, index) => (
@@ -270,32 +324,45 @@ const CustomerDashboard = () => {
                 key={index}
                 className="bg-white shadow-xl rounded-2xl overflow-hidden hover:shadow-2xl transition duration-300 flex flex-col"
               >
+                {/* Hall Icon Banner */}
                 <div className="h-40 bg-gradient-to-br from-blue-200 to-purple-200 flex items-center justify-center text-5xl text-blue-400 font-extrabold">
-                  <span role="img" aria-label="hall">
-                    🏛️
-                  </span>
+                  <span role="img" aria-label="hall">🏛️</span>
                 </div>
+
+                {/* Hall Details */}
                 <div className="p-6 flex-1 flex flex-col">
-                  <h4 className="text-xl font-semibold mb-2 text-blue-700">
-                    {hall.name}
-                  </h4>
+                  {/* Name + Favourite Button */}
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="text-xl font-semibold text-blue-700">{hall.name}</h4>
+                    <button
+                      onClick={() => handleToggleFavourite(hall._id)}
+                      className="text-2xl focus:outline-none"
+                    >
+                      {isFavourite(hall._id) ? (
+                        <span className="text-red-500">❤️</span>
+                      ) : (
+                        <span className="text-gray-400 hover:text-red-400">🤍</span>
+                      )}
+                    </button>
+                  </div>
                   <p className="text-sm text-gray-600 mb-1">
                     <strong>Capacity:</strong> {hall.capacity}
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
-                    <strong>Price:</strong> <span className="text-green-600 font-bold">₹{hall.price}/day</span>
+                    <strong>Price:</strong>{" "}
+                    <span className="text-green-600 font-bold">₹{hall.price}/day</span>
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
                     <strong>Address:</strong> {hall.address}
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
-                    <strong>Amenities:</strong>{" "}
-                    {(hall.amenities || []).join(", ")}
+                    <strong>Amenities:</strong> {(hall.amenities || []).join(", ")}
                   </p>
                   <p className="text-sm text-gray-600 mb-3">
-                    <strong>Operating Days:</strong>{" "}
-                    {(hall.daysOpen || []).join(", ")}
+                    <strong>Operating Days:</strong> {(hall.daysOpen || []).join(", ")}
                   </p>
+
+                  {/* Book Button */}
                   <button
                     onClick={() => {
                       setSelectedHall(hall);
@@ -327,9 +394,7 @@ const CustomerDashboard = () => {
               Book {selectedHall.name}
             </h2>
             <form onSubmit={handleBookingSubmit}>
-              <label className="block mb-2 font-medium text-gray-700">
-                Select Date
-              </label>
+              <label className="block mb-2 font-medium text-gray-700">Select Date</label>
               <DatePicker
                 selected={selectedDate ? new Date(selectedDate) : null}
                 onChange={(date) => {
@@ -342,9 +407,7 @@ const CustomerDashboard = () => {
                 required
               />
 
-              <label className="block mb-2 font-medium text-gray-700">
-                Occasion
-              </label>
+              <label className="block mb-2 font-medium text-gray-700">Occasion</label>
               <input
                 type="text"
                 value={occasion}
@@ -364,7 +427,8 @@ const CustomerDashboard = () => {
         </div>
       )}
     </div>
-  );
+  </div>
+);
 };
 
 export default CustomerDashboard;
