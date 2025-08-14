@@ -27,7 +27,7 @@ const [favouriteHallIds, setFavouriteHallIds] = useState([]);
   };
   const handleViewBookings = async () => {
     try {
-      const res = await fetch(`http://event-hall-booking-system.onrender.com/bookings/byCustomer/${customer._id}`);
+      const res = await fetch(`https://event-hall-booking-system.onrender.com/bookings/byCustomer/${customer._id}`);
       const data = await res.json();
       setBookings(data.bookingsWithHallDetails || []);
       console.log(bookings);
@@ -39,7 +39,7 @@ const [favouriteHallIds, setFavouriteHallIds] = useState([]);
   useEffect(() => {
   const fetchFavourites = async () => {
     try {
-      const res = await fetch(`http://event-hall-booking-system.onrender.com/favourites/byCustomer/${customerId}`);
+      const res = await fetch(`https://event-hall-booking-system.onrender.com/favourites/byCustomer/${customerId}`);
       const data = await res.json();
       if (data.success) {
         const ids = data.favouritesWithHallDetails.map(f => f.hallId);
@@ -54,7 +54,7 @@ const [favouriteHallIds, setFavouriteHallIds] = useState([]);
 }, [customerId]);
   const handleViewFavourites = async () => {
     try {
-      const res = await fetch(`http://event-hall-booking-system.onrender.com/favourites/byCustomer/${customer._id}`);
+      const res = await fetch(`https://event-hall-booking-system.onrender.com/favourites/byCustomer/${customer._id}`);
       const data = await res.json();
       console.log(data);
       setFavourites(data.favouritesWithHallDetails || []);
@@ -82,7 +82,7 @@ const [favouriteHallIds, setFavouriteHallIds] = useState([]);
   // Toggle Favourite Handler
 const handleToggleFavourite = async (hallId) => {
   try {
-    const res = await fetch(`http://event-hall-booking-system.onrender.com/favourites/toggle`, {
+    const res = await fetch(`https://event-hall-booking-system.onrender.com/favourites/toggle`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
