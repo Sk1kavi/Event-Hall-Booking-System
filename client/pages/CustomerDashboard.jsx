@@ -14,12 +14,38 @@ const CustomerDashboard = () => {
   const [customer, setCustomer] = useState(null);
   const [fetching, setFetching] = useState(true);
   const navigate = useNavigate();
+  const [bookings, setBookings] = useState([]);
+  const [favourites, setFavourites] = useState([]);
+  const [isBookingsOpen, setIsBookingsOpen] = useState(false);
+  const [isFavouritesOpen, setIsFavouritesOpen] = useState(false);
+
 
   const handleLogout = () => {
     localStorage.clear();
     navigate("/");
   };
+  const handleViewBookings = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/bookings/byCustomer/${customer._id}`);
+      const data = await res.json();
+      setBookings(data.bookingsWithHallDetails || []);
+      console.log(bookings);
+      setIsBookingsOpen(true);
+    } catch (error) {
+      console.error("Error fetching bookings:", error);
+    }
+  };
 
+  const handleViewFavourites = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/favourites/byCustomer/${customer._id}`);
+      const data = await res.json();
+      setFavourites(data);
+      setIsFavouritesOpen(true);
+    } catch (error) {
+      console.error("Error fetching favourites:", error);
+    }
+  };
   const fetchHalls = async () => {
     setLoading(true);
     try {
@@ -123,27 +149,110 @@ const CustomerDashboard = () => {
         </button>
       </div>
 
-      {/* Profile Section */}
       <div className="max-w-4xl mx-auto mt-10">
-        <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col md:flex-row items-center gap-8">
-          <div className="flex-shrink-0">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-              {customer.name?.charAt(0)}
-            </div>
+      <div className="bg-white rounded-2xl shadow-lg p-8 flex flex-col md:flex-row items-center gap-8">
+        {/* Profile Icon */}
+        <div className="flex-shrink-0">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+            {customer.name?.charAt(0)}
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-blue-700 mb-2">
-              {customer.name}
-            </h2>
-            <p className="text-gray-700 mb-1">
-              <span className="font-semibold">Email:</span> {customer.email}
-            </p>
-            <p className="text-gray-700">
-              <span className="font-semibold">Phone:</span> {customer.number}
-            </p>
+        </div>
+
+        {/* Customer Details */}
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold text-blue-700 mb-2">
+            {customer.name}
+          </h2>
+          <p className="text-gray-700 mb-1">
+            <span className="font-semibold">Email:</span> {customer.email}
+          </p>
+          <p className="text-gray-700 mb-4">
+            <span className="font-semibold">Phone:</span> {customer.number}
+          </p>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-4">
+            <button
+              onClick={handleViewBookings}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow"
+            >
+              View Bookings
+            </button>
+            <button
+              onClick={handleViewFavourites}
+              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 shadow"
+            >
+              View Favourites
+            </button>
           </div>
         </div>
       </div>
+
+     {/* Bookings Modal */}
+{isBookingsOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div className="bg-white p-6 rounded-2xl w-[28rem] max-h-[80vh] overflow-y-auto shadow-lg">
+      <h3 className="text-xl font-bold mb-4">Your Bookings</h3>
+
+      {bookings.length > 0 ? (
+        <ul className="space-y-3">
+          {bookings.map((b, idx) => (
+            <li
+              key={idx}
+              className="p-3 bg-gray-100 rounded-lg shadow-sm"
+            >
+              <span className="font-semibold">Hall:</span> {b.hall?.name} <br />
+              <span className="font-semibold">Address:</span> {b.hall?.address} <br />
+              <span className="font-semibold">Price:</span> ₹{b.hall?.price} <br />
+              <span className="font-semibold">Date:</span> {b.date} <br />
+              <span className="font-semibold">Occasion:</span> {b.occasion}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-gray-500">No bookings found.</p>
+      )}
+
+      <button
+        onClick={() => setIsBookingsOpen(false)}
+        className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
+
+      {/* Favourites Modal */}
+      {isFavouritesOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-2xl w-96 shadow-lg">
+            <h3 className="text-xl font-bold mb-4">Your Favourites</h3>
+            {favourites.length > 0 ? (
+              <ul className="space-y-2">
+                {favourites.map((f, idx) => (
+                  <li
+                    key={idx}
+                    className="p-2 bg-gray-100 rounded-lg shadow-sm"
+                  >
+                    <span className="font-semibold">Hall:</span> {f.hallName}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-500">No favourites found.</p>
+            )}
+            <button
+              onClick={() => setIsFavouritesOpen(false)}
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 
       {/* Halls Section */}
       <div className="max-w-7xl mx-auto mt-12 px-4">
