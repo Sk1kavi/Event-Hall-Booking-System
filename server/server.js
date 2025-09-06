@@ -577,6 +577,54 @@ app.post("/favourites/toggle", async (req, res) => {
   }
 });
 
+// Fetch bookings by owner
+app.get("/bookings/byOwner/:ownerId", async (req, res) => {
+  const { ownerId } = req.params;
+
+  try {
+    const db = client.db("hallbooking");
+    const hallsCollection = db.collection("approved_halls"); // or your halls collection
+    const bookingsCollection = db.collection("bookings");
+    const customersCollection = db.collection("customers");
+
+    // 1️⃣ Get all halls for this owner
+    const ownerHalls = await hallsCollection.find({ owner_id: ownerId }).toArray();
+    const hallIds = ownerHalls.map(h => h._id.toString());
+
+    if (hallIds.length === 0) {
+      return res.json({ success: true, bookingsWithCustomer: [] });
+    }
+
+    // 2️⃣ Get all bookings for these halls
+    const bookings = await bookingsCollection.find({ hallId: { $in: hallIds } }).toArray();
+
+    // 3️⃣ Populate customer details
+    const bookingsWithCustomer = await Promise.all(bookings.map(async (booking) => {
+      const customer = await customersCollection.findOne({ _id: new ObjectId(booking.customerId) });
+      const hall = ownerHalls.find(h => h._id.toString() === booking.hallId); // attach hall info
+
+      return {
+        ...booking,
+        customer: customer ? {
+          name: customer.name,
+          email: customer.email,
+          number: customer.number
+        } : {},
+        hall: hall ? {
+          name: hall.name,
+          address: hall.address,
+          price: hall.price
+        } : {}
+      };
+    }));
+
+    res.json({ success: true, bookingsWithCustomer });
+  } catch (error) {
+    console.error("Error fetching bookings for owner:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 // Fetch favourites by customer
 app.get("/favourites/byCustomer/:customerId", async (req, res) => {
     const { customerId } = req.params;
