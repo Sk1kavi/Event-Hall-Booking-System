@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 /**
  * OwnerDashboard (UI-refactor)
@@ -130,6 +131,32 @@ export default function OwnerDashboard() {
     }
     setLoading(false);
   };
+  const handleUpdateStatus = async (bookingId, newStatus) => {
+  try {
+    const res = await fetch(`http://localhost:5000/bookings/${bookingId}/status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: newStatus }),
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      // Update state locally so UI updates instantly
+      setSelectedBookings(prev =>
+        prev.map(b =>
+          b._id === bookingId ? { ...b, status: newStatus } : b
+        )
+      );
+      alert(`Booking ${newStatus}`);
+    } else {
+      alert(data.message);
+    }
+  } catch (err) {
+    console.error(err);
+    alert("Failed to update booking status");
+  }
+};
+
 
   useEffect(() => {
     fetchHalls();
@@ -324,37 +351,74 @@ export default function OwnerDashboard() {
           </section>
         )}
 
-        {/* Bookings for a selected hall (no back button; use sidebar) */}
-        {selectedMenu === "bookings" && (
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-semibold text-gray-800">Bookings{selectedHall ? ` — ${selectedHall.name}` : ""}</h3>
-              <div className="text-sm text-gray-500">Use the sidebar to switch views</div>
+{selectedMenu === "bookings" && (
+  <section className="space-y-4">
+    <div className="flex items-center justify-between">
+      <h3 className="text-2xl font-semibold text-gray-800">
+        Bookings{selectedHall ? ` — ${selectedHall.name}` : ""}
+      </h3>
+      <div className="text-sm text-gray-500">Use the sidebar to switch views</div>
+    </div>
+
+    {selectedBookings.length === 0 ? (
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+        No bookings found for this hall.
+      </div>
+    ) : (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {selectedBookings.map((booking, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: idx * 0.05 }}
+            className="bg-white rounded-lg shadow-md p-5 flex flex-col justify-between h-72 border border-gray-100 hover:shadow-lg transition"
+          >
+            {/* Booking Info */}
+            <div className="flex flex-col gap-2">
+              <div className="text-sm font-medium text-gray-500 uppercase tracking-wide">Date</div>
+              <div className="text-lg font-bold text-blue-700">{booking.date}</div>
+              <div className="text-sm text-gray-700 mt-1"><strong>Occasion:</strong> {booking.occasion}</div>
+              <div className="text-sm text-gray-700 mt-1"><strong>Booked By:</strong> {booking.customer?.name}</div>
+              <div className="text-sm text-gray-700">{booking.customer?.email}</div>
+              <div className="text-sm text-gray-700">{booking.customer?.number}</div>
             </div>
 
-            {selectedBookings.length === 0 ? (
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">No bookings found for this hall.</div>
-            ) : (
-              <ul className="grid gap-4">
-                {selectedBookings.map((booking, idx) => (
-                  <li key={idx} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start gap-4">
-                    <div>
-                      <div className="text-sm text-gray-500">Date</div>
-                      <div className="text-lg font-semibold text-blue-700">{booking.date}</div>
-                      <div className="mt-2 text-sm text-gray-700"><strong>Occasion:</strong> {booking.occasion}</div>
-                      <div className="mt-1 text-sm text-gray-700"><strong>Booked By:</strong> {booking.customer?.name} • {booking.customer?.email}</div>
-                      <div className="mt-1 text-sm text-gray-700"><strong>Phone:</strong> {booking.customer?.number}</div>
-                    </div>
+            {/* Status / Actions */}
+            <div className="mt-4 flex justify-center gap-2">
+              {booking.status === "pending" ? (
+                <>
+                  <button
+                    className="bg-green-600 text-white text-sm py-1 px-3 rounded-full hover:bg-green-700 transition flex-1"
+                    onClick={() => handleUpdateStatus(booking._id, "confirmed")}
+                  >
+                    Approve
+                  </button>
+                  <button
+                    className="bg-red-600 text-white text-sm py-1 px-3 rounded-full hover:bg-red-700 transition flex-1"
+                    onClick={() => handleUpdateStatus(booking._id, "rejected")}
+                  >
+                    Reject
+                  </button>
+                </>
+              ) : (
+                <span
+                  className={`inline-block text-sm px-4 py-2 rounded-full font-medium
+                    ${booking.status === "confirmed" ? "bg-green-100 text-green-700" : ""}
+                    ${booking.status === "rejected" ? "bg-red-100 text-red-700" : ""}
+                  `}
+                >
+                  {booking.status?.charAt(0).toUpperCase() + booking.status?.slice(1)}
+                </span>
+              )}
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    )}
+  </section>
+)}
 
-                    <div className="text-right">
-                      <div className="inline-block bg-blue-50 text-blue-700 text-xs px-3 py-1 rounded-full font-medium">Confirmed</div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
       </main>
     </div>
   );

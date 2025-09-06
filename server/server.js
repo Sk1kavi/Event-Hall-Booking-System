@@ -396,6 +396,7 @@ app.get("/customer/:customerId", async (req, res) => {
   }
 });
 
+//Booking Route
 app.post("/bookings", async (req, res) => {
     const { hallId, customerId, date, occasion } = req.body;
 
@@ -403,26 +404,29 @@ app.post("/bookings", async (req, res) => {
         const db = client.db("hallbooking");
         const bookingsCollection = db.collection("bookings");
 
-        // Check for existing booking on the same date for the same hall
+        // Check for existing confirmed booking on the same date for the same hall
         const existingBooking = await bookingsCollection.findOne({
             hallId,
-            date
+            date,
+            status: "confirmed"   // only block if a booking is confirmed
         });
 
         if (existingBooking) {
             return res.status(400).json({ success: false, message: "Selected date is already booked for this hall." });
         }
 
+        // Insert booking with default status = "pending"
         const result = await bookingsCollection.insertOne({
             hallId,
             customerId,
             date,
             occasion,
+            status: "pending",  // 🔹 default status
             createdAt: new Date()
         });
 
         if (result.acknowledged) {
-            res.json({ success: true, message: "Booking successful", bookingId: result.insertedId });
+            res.json({ success: true, message: "Booking request submitted, awaiting owner approval", bookingId: result.insertedId });
         } else {
             res.status(500).json({ success: false, message: "Failed to create booking" });
         }
@@ -430,6 +434,34 @@ app.post("/bookings", async (req, res) => {
         console.error("Error while creating booking:", error);
         res.status(500).json({ success: false, message: "Internal server error" });
     }
+});
+
+app.patch("/bookings/:id/status", async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body; // "confirmed" or "rejected"
+
+  if (!["confirmed", "rejected"].includes(status)) {
+    return res.status(400).json({ success: false, message: "Invalid status" });
+  }
+
+  try {
+    const db = client.db("hallbooking");
+    const bookingsCollection = db.collection("bookings");
+
+    const result = await bookingsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status } }
+    );
+
+    if (result.modifiedCount === 1) {
+      res.json({ success: true, message: `Booking ${status}` });
+    } else {
+      res.status(404).json({ success: false, message: "Booking not found" });
+    }
+  } catch (error) {
+    console.error("Error updating booking status:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
 });
 
 //Fetch bookings
@@ -544,31 +576,6 @@ app.post("/favourites/toggle", async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });
-
-// Get Favorites by Customer ID
-// app.get("/favourites/byCustomer/:customerId", async (req, res) => {
-//   try {
-//     const db = client.db("hallbooking");
-//     const favoritesCollection = db.collection("favourites");
-//     const hallsCollection = db.collection("applied_halls");
-
-//     // Find all favorites for this customer
-//     const favorites = await favoritesCollection.find({ customerId: req.params.customerId }).toArray();
-
-//     // Extract hallIds
-//     const hallIds = favorites.map(fav => fav.hallId);
-
-//     // Fetch hall details for these IDs
-//     const hallList = await hallsCollection.find({ _id: { $in: hallIds.map(id => new ObjectId(id)) } }).toArray();
-
-//     res.json({ success: true, favorites: hallList });
-
-//   } catch (error) {
-//     console.error("Error fetching favorites:", error);
-//     res.status(500).json({ success: false, message: "Internal server error" });
-//   }
-// });
-
 
 // Fetch favourites by customer
 app.get("/favourites/byCustomer/:customerId", async (req, res) => {

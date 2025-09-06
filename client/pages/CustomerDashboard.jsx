@@ -127,7 +127,7 @@ const CustomerDashboard = () => {
       customerId: customerId,
     };
     const res = await fetch(
-      "https://event-hall-booking-system.onrender.com/bookings",
+      "http://localhost:5000/bookings",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -335,41 +335,56 @@ const CustomerDashboard = () => {
                 ))}
               </div>
             )}
+              {activeSection === "bookings" && (
+                <div className={` rounded-2xl shadow-lg p-6 ${fadeIn}`}>
+                  <h3 className="text-lg font-bold mb-4 text-blue-700">My Bookings</h3>
 
-            {activeSection === "bookings" && (
-              <div className={`bg-white rounded-2xl shadow-lg p-6 ${fadeIn}`}>
-                <h3 className="text-lg font-bold mb-4 text-blue-700">
-                  My Bookings
-                </h3>
-                {bookings.length > 0 ? (
-                        <ul className="grid grid-cols-1 gap-4">
-                          {bookings.map((b, idx) => (
-                            <li
-                              key={idx}
-                              className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-4 shadow hover:shadow-md hover:scale-[1.02] transition transform duration-200"
-                            >
-                              <div className="flex justify-between items-center mb-2">
-                                <h4 className="text-lg font-bold text-blue-700">{b.hall?.name}</h4>
-                                <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">
-                                  {b.date}
-                                </span>
-                              </div>
+                  {bookings.length > 0 ? (
+                    <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {bookings.map((b, idx) => (
+                        <li
+                          key={idx}
+                          className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl hover:-translate-y-1 transition transform duration-300 ease-out"
+                        >
+                          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-4">
+                            {/* Left: Hall info */}
+                            <div className="flex flex-col gap-2">
+                              <h4 className="text-xl font-bold text-blue-700">{b.hall?.name}</h4>
                               <p className="text-sm text-gray-600"><strong>Address:</strong> {b.hall?.address}</p>
                               <p className="text-sm text-gray-600"><strong>Price:</strong> ₹{b.hall?.price}</p>
-                              <p className="mt-2">
-                                <span className="inline-block bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full">
-                                  {b.occasion}
-                                </span>
-                              </p>
-                            </li>
-                          ))}
-                        </ul>
+                            </div>
 
-                ) : (
-                  <p className="text-gray-500">No bookings found.</p>
-                )}
-              </div>
-            )}
+                            {/* Right: Date + Status */}
+                            <div className="flex flex-col md:items-end gap-2">
+                              <span className="bg-blue-100 text-blue-600 text-sm px-3 py-1 rounded-full font-medium">
+                                {b.date}
+                              </span>
+
+                              <span
+                                className={`inline-block text-sm px-4 py-2 rounded-full font-semibold
+                                  ${b.status === "pending" ? "bg-yellow-100 text-yellow-800" : ""}
+                                  ${b.status === "confirmed" ? "bg-green-100 text-green-800" : ""}
+                                  ${b.status === "rejected" ? "bg-red-100 text-red-800" : ""}
+                                `}
+                              >
+                                {b.status?.charAt(0).toUpperCase() + b.status?.slice(1)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Occasion */}
+                          <p className="mt-2 text-sm text-purple-700 font-medium inline-block bg-purple-50 px-2 py-1 rounded-full">
+                            {b.occasion}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500">No bookings found.</p>
+                  )}
+                </div>
+              )}
+
 
             {activeSection === "favourites" && (
               <div className={`bg-white rounded-2xl shadow-lg p-6 ${fadeIn}`}>
