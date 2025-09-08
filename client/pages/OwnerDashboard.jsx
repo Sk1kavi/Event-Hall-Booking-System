@@ -74,7 +74,7 @@ export default function OwnerDashboard() {
   // --- Fetch all bookings for analytics ---
   const fetchAllBookings = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/bookings/byOwner/${ownerId}`);
+      const res = await fetch(`https://event-hall-booking-system.onrender.com/bookings/byOwner/${ownerId}`);
       const data = await res.json();
       if (data.success) setAllBookings(data.bookingsWithCustomer || []);
     } catch (err) {
@@ -90,7 +90,7 @@ export default function OwnerDashboard() {
   // --- Approve/Reject booking ---
   const handleUpdateStatus = async (bookingId, newStatus) => {
     try {
-      const res = await fetch(`http://localhost:5000/bookings/${bookingId}/status`, {
+      const res = await fetch(`https://event-hall-booking-system.onrender.com/bookings/${bookingId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -138,7 +138,7 @@ export default function OwnerDashboard() {
   formData.append("image", image);
 
   try {
-    const res = await fetch("http://localhost:5000/hallregister", {
+    const res = await fetch("https://event-hall-booking-system.onrender.com/hallregister", {
       method: "POST",
       body: formData
     });

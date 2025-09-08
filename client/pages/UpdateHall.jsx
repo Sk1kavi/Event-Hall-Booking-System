@@ -22,7 +22,7 @@ const UpdateHall = () => {
     useEffect(() => {
         const fetchHall = async () => {
             try {
-                const res = await fetch(`http://localhost:5000/halls/${id}`);
+                const res = await fetch(`https://event-hall-booking-system.onrender.com/halls/${id}`);
                 if (!res.ok) throw new Error("Failed to fetch hall");
                 const data = await res.json();
 
@@ -74,7 +74,7 @@ const UpdateHall = () => {
 
             if (form.image) formData.append("image", form.image);
 
-            const res = await fetch(`http://localhost:5000/halls/${id}`, {
+            const res = await fetch(`https://event-hall-booking-system.onrender.com/halls/${id}`, {
                 method: "PUT",
                 body: formData,
             });

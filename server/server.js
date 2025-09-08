@@ -558,6 +558,7 @@ app.post("/bookings", async (req, res) => {
     }
 });
 
+//update status
 app.patch("/bookings/:id/status", async (req, res) => {
   const { id } = req.params;
   const { status } = req.body; // "confirmed" or "rejected"

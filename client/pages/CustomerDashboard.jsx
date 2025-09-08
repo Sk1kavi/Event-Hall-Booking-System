@@ -127,7 +127,7 @@ const CustomerDashboard = () => {
       customerId: customerId,
     };
     const res = await fetch(
-      "http://localhost:5000/bookings",
+      "https://event-hall-booking-system.onrender.com/bookings",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
