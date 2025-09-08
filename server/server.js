@@ -234,6 +234,22 @@ app.post("/hallregister", upload.single("image"), async (req, res) => {
   }
 });
 
+
+// get Halls for admin
+app.get("/halls", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const hallCollection = db.collection("applied_halls");
+
+    const halls = await hallCollection.find().toArray();
+    res.json({ success: true, halls });
+  } catch (error) {
+    console.error("Error fetching halls:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+
 // UPDATE hall
 app.put("/halls/:id", upload.single("image"), async (req, res) => {
   try {
@@ -298,6 +314,19 @@ app.put("/halls/:id", upload.single("image"), async (req, res) => {
   }
 });
 
+// get approved Halls for customer
+app.get("/halls/list", async (req, res) => {
+  try {
+    const db = client.db(dbName);
+    const hallCollection = db.collection("approved_halls");
+
+    const halls = await hallCollection.find().toArray();
+    res.json({ success: true, halls });
+  } catch (error) {
+    console.error("Error fetching halls:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
 
 
 // GET single hall by ID
@@ -435,33 +464,6 @@ app.delete("/halls/reject/:id", async (req, res) => {
   }
 });
 
-// get Halls
-app.get("/halls", async (req, res) => {
-  try {
-    const db = client.db(dbName);
-    const hallCollection = db.collection("applied_halls");
-
-    const halls = await hallCollection.find().toArray();
-    res.json({ success: true, halls });
-  } catch (error) {
-    console.error("Error fetching halls:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
-
-// get approved Halls
-app.get("/halls/list", async (req, res) => {
-  try {
-    const db = client.db(dbName);
-    const hallCollection = db.collection("approved_halls");
-
-    const halls = await hallCollection.find().toArray();
-    res.json({ success: true, halls });
-  } catch (error) {
-    console.error("Error fetching halls:", error);
-    res.status(500).json({ success: false, message: "Internal server error" });
-  }
-});
 
 //Owner Dashboard Route 
 //fetch owner details for profile
