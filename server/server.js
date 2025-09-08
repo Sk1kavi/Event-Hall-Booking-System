@@ -4,6 +4,9 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import { MongoClient,ObjectId } from "mongodb";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
+
 
 // Load environment variables
 dotenv.config();
@@ -14,6 +17,18 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+
+// Cloudinary config
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
+});
+
+// Multer setup for file parsing
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
 
 // MongoDB connection URI and DB details
 const uri = process.env.MONGO_URI;
@@ -162,43 +177,150 @@ app.post("/ownerregister", async (req, res) => {
 });
 
 // HallRegister Route
-app.post("/hallregister", async (req, res) => {
-  const {
-    name,
-    owner_id,
-    capacity,
-    address,
-    price,
-    amenities,
-    daysOpen
-  } = req.body;
+app.post("/hallregister", upload.single("image"), async (req, res) => {
+  const { name, owner_id, capacity, address, price, amenities, daysOpen } = req.body;
 
   try {
     const db = client.db("hallbooking");
     const hallCollection = db.collection("applied_halls");
 
-    // Basic validation 
-    if (!name || !owner_id  || !capacity || !price) {
+    if (!name || !owner_id || !capacity || !price) {
       return res.status(400).json({ success: false, message: "Missing required fields" });
     }
 
-    const result = await hallCollection.insertOne({
-      name: name.trim(),
-      owner_id: owner_id,
-      capacity: Number(capacity),
-      address: address?.trim() || "",
-      price: Number(price),
-      amenities: Array.isArray(amenities) ? amenities : [],
-      daysOpen: Array.isArray(daysOpen) ? daysOpen : []
-    });
+    let imageUrl = "";
+    if (req.file) {
+      const uploadResult = await cloudinary.uploader.upload_stream(
+        { folder: "hall_images" },
+        async (error, result) => {
+          if (error) {
+            console.error("Cloudinary upload error:", error);
+            return res.status(500).json({ success: false, message: "Image upload failed" });
+          }
 
-    if (result.acknowledged) {
-      res.json({ success: true, message: "Hall registered successfully", hallId: result.insertedId });
+          imageUrl = result.secure_url;
+
+          // Save hall details in DB
+          const insertResult = await hallCollection.insertOne({
+            name: name.trim(),
+            owner_id,
+            capacity: Number(capacity),
+            address: address?.trim() || "",
+            price: Number(price),
+            amenities:  amenities ? JSON.parse(amenities) : [],
+            daysOpen: daysOpen ? JSON.parse(daysOpen) : [],
+            image: imageUrl
+          });
+
+          if (insertResult.acknowledged) {
+            return res.json({
+              success: true,
+              message: "Hall registered successfully",
+              hallId: insertResult.insertedId,
+              image: imageUrl
+            });
+          } else {
+            return res.status(500).json({ success: false, message: "Hall registration failed" });
+          }
+        }
+      );
+      uploadResult.end(req.file.buffer);
     } else {
-      res.status(500).json({ success: false, message: "Hall registration failed" });
+      return res.status(400).json({ success: false, message: "Image is required" });
     }
   } catch (error) {
     console.error("Error during hall registration:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+});
+
+// UPDATE hall
+app.put("/halls/:id", upload.single("image"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = client.db("hallbooking");
+    const hallCollection = db.collection("approved_halls");
+    const { name, address, capacity, price, amenities, daysOpen } = req.body;
+
+    const updateData = {
+      ...(name && { name: name.trim() }),
+      ...(address && { address: address.trim() }),
+      ...(capacity && { capacity: Number(capacity) }),
+      ...(price && { price: Number(price) }),
+      ...(amenities && { amenities: JSON.parse(amenities) }),
+      ...(daysOpen && { daysOpen: JSON.parse(daysOpen) }),
+    };
+
+    // If image uploaded, send to Cloudinary
+    if (req.file) {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "hall_images" },
+        async (error, result) => {
+          if (error) {
+            console.error("Cloudinary upload error:", error);
+            return res.status(500).json({ success: false, message: "Image upload failed" });
+          }
+
+          updateData.image = result.secure_url;
+
+          // Perform DB update after upload finishes
+          const dbResult = await hallCollection.updateOne(
+            { _id: new ObjectId(id) },
+            { $set: updateData }
+          );
+
+          if (dbResult.matchedCount === 0) {
+            return res.status(404).json({ message: "Hall not found" });
+          }
+
+          res.json({ message: "Hall updated successfully" });
+        }
+      );
+
+      // Write buffer to Cloudinary stream
+      uploadStream.end(req.file.buffer);
+    } else {
+      // No new image → just update other fields
+      const dbResult = await hallCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateData }
+      );
+
+      if (dbResult.matchedCount === 0) {
+        return res.status(404).json({ message: "Hall not found" });
+      }
+
+      res.json({ message: "Hall updated successfully" });
+    }
+  } catch (err) {
+    console.error("Error updating hall:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+// GET single hall by ID
+app.get("/halls/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = client.db("hallbooking");
+    const hallCollection = db.collection("approved_halls");
+
+    // Validate ObjectId
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: "Invalid hall ID" });
+    }
+
+    const hall = await hallCollection.findOne({ _id: new ObjectId(id) });
+
+    if (!hall) {
+      return res.status(404).json({ success: false, message: "Hall not found" });
+    }
+
+    res.json(hall);
+  } catch (error) {
+    console.error("Error fetching hall:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 });

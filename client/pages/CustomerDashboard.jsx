@@ -290,9 +290,18 @@ const CustomerDashboard = () => {
                     key={index}
                     className={`bg-white shadow-xl rounded-2xl overflow-hidden hover:shadow-2xl transition duration-300 flex flex-col transform hover:-translate-y-1 hover:scale-105 ${scaleIn}`}
                   >
-                    <div className="h-32 bg-gradient-to-br from-blue-200 to-purple-200 flex items-center justify-center text-3xl text-blue-600 font-bold">
-                      {hall.name.charAt(0)}
-                    </div>
+                    {hall.image ? (
+                      <img
+                        src={hall.image}
+                        alt={hall.name}
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-full h-48 flex items-center justify-center bg-gray-200 text-gray-700 text-4xl font-bold rounded-lg">
+                        {hall.name?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+
                     <div className="p-6 flex-1 flex flex-col">
                       <div className="flex justify-between items-center mb-2">
                         <h4 className="text-lg font-semibold text-blue-700">
@@ -386,36 +395,58 @@ const CustomerDashboard = () => {
               )}
 
 
-            {activeSection === "favourites" && (
-              <div className={`bg-white rounded-2xl shadow-lg p-6 ${fadeIn}`}>
-                <h3 className="text-lg font-bold mb-4 text-purple-700">
-                  My Favourites
-                </h3>
-                {favourites.length > 0 ? (
-                 <ul className="grid grid-cols-1 gap-4">
-                  {favourites.map((f, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-center justify-between bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-4 shadow hover:shadow-md hover:scale-[1.02] transition transform duration-200"
-                    >
-                      <div>
-                        <h4 className="text-lg font-semibold text-purple-700 flex items-center gap-2">
-                          <span role="img" aria-label="hall">🏛️</span>
-                          {f.hall?.name || "Unknown"}
-                        </h4>
-                        <p className="text-sm text-gray-600">{f.hall?.address || "N/A"}</p>
-                        <p className="text-sm text-green-600 font-bold">₹{f.hall?.price || "N/A"}</p>
-                      </div>
-                      <span className="text-red-500 text-2xl animate-pulse">💖</span>
-                    </li>
-                  ))}
-                </ul>
+           {activeSection === "favourites" && (
+  <div className={`bg-white rounded-2xl shadow-lg p-6 ${fadeIn}`}>
+    <h3 className="text-lg font-bold mb-4 text-purple-700">
+      My Favourites
+    </h3>
 
-                ) : (
-                  <p className="text-gray-500">No favourites found.</p>
-                )}
+    {favourites.length > 0 ? (
+      <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {favourites.map((f, idx) => (
+          <li
+            key={idx}
+            className="relative bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl shadow hover:shadow-md hover:scale-[1.02] transition transform duration-200 overflow-hidden"
+          >
+            {/* Floating Heart Badge */}
+            <span className="absolute top-2 right-2 text-red-500 text-2xl animate-pulse">
+              💖
+            </span>
+
+            {/* Hall Image / Avatar */}
+            {f.hall?.image ? (
+              <img
+                src={f.hall.image}
+                alt={f.hall.name}
+                className="w-full h-40 object-cover"
+              />
+            ) : (
+              <div className="w-full h-40 flex items-center justify-center bg-gray-200 text-gray-700 text-4xl font-bold">
+                {f.hall?.name?.charAt(0).toUpperCase()}
               </div>
             )}
+
+            {/* Card Content */}
+            <div className="p-4">
+              <h4 className="text-md font-semibold text-gray-800">
+                {f.hall?.name || "Unnamed Hall"}
+              </h4>
+              <p className="text-sm text-gray-600">
+                {f.hall?.address || "N/A"}
+              </p>
+              <p className="text-sm text-green-600 font-bold">
+                ₹{f.hall?.price || "N/A"}
+              </p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <p className="text-gray-500">No favourites found.</p>
+    )}
+  </div>
+)}
+
           </>
         )}
       </div>

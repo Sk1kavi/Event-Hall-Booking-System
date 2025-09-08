@@ -216,6 +216,11 @@ const AdminDashboard = () => {
                   className="border border-purple-100 bg-purple-50 rounded-xl p-6 shadow hover:shadow-lg transition-shadow duration-200"
                 >
                   <div className="space-y-1">
+                     <img 
+                        src={hall.image || "/placeholder.png"} 
+                        alt={hall.name} 
+                        className="w-full h-48 object-cover rounded-lg"
+                      />
                     <p className="font-bold text-purple-800 text-lg">
                       {hall.name} <span className="font-normal text-gray-700">(Capacity: {hall.capacity})</span>
                     </p>

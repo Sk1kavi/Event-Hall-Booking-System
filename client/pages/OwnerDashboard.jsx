@@ -11,6 +11,7 @@ import {
   Bar,
 } from "recharts";
 
+
 export default function OwnerDashboard() {
   const navigate = useNavigate();
   const ownerId = localStorage.getItem("ownerId");
@@ -33,6 +34,8 @@ export default function OwnerDashboard() {
   const [price, setPrice] = useState("");
   const [amenities, setAmenities] = useState([]);
   const [daysOpen, setDaysOpen] = useState([]);
+  const [image, setImage] = useState(null);
+
 
   const [filterHallId, setFilterHallId] = useState("all");
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
@@ -118,41 +121,40 @@ export default function OwnerDashboard() {
   };
 
   const handleAddHall = async (e) => {
-    e.preventDefault();
-    if (!hallName || !capacity || isNaN(capacity) || !price) {
-      alert("Fill all required fields");
-      return;
+  e.preventDefault();
+  if (!hallName || !capacity || isNaN(capacity) || !price || !image) {
+    alert("Fill all required fields including image");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("name", hallName.trim());
+  formData.append("owner_id", ownerId);
+  formData.append("capacity", Number(capacity));
+  formData.append("address", address);
+  formData.append("price", Number(price));
+  formData.append("amenities",JSON.stringify(amenities));
+  formData.append("daysOpen",JSON.stringify(daysOpen) );
+  formData.append("image", image);
+
+  try {
+    const res = await fetch("http://localhost:5000/hallregister", {
+      method: "POST",
+      body: formData
+    });
+    if (res.ok) {
+      const savedHall = await res.json();
+      setHalls(prev => [...prev, savedHall]);
+      setHallName(""); setCapacity(""); setAddress(""); setPrice(""); setAmenities([]); setDaysOpen([]); setImage(null);
+      alert("Hall registered successfully!");
     }
+  } catch (err) {
+    console.error(err);
+    alert("Error registering hall");
+  }
+  fetchHalls();
+};
 
-    const newHall = {
-      name: hallName.trim(),
-      owner_id: ownerId,
-      capacity: Number(capacity),
-      address,
-      price: Number(price),
-      amenities: Array.isArray(amenities) ? amenities : [],
-      daysOpen: Array.isArray(daysOpen) ? daysOpen : [],
-    };
-
-    try {
-      const res = await fetch("https://event-hall-booking-system.onrender.com/hallregister", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newHall),
-      });
-      if (res.ok) {
-        const savedHall = await res.json();
-        setHalls(prev => [...prev, savedHall]);
-        setHallName(""); setCapacity(""); setAddress(""); setPrice(""); setAmenities([]); setDaysOpen([]);
-        alert("Hall registered successfully!");
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Error registering hall");
-    }
-        fetchHalls();
-
-  };
 
   const handleViewBookings = async (hallId) => {
     try {
@@ -240,85 +242,173 @@ export default function OwnerDashboard() {
           </section>
         )}
         {/* My Halls */}
-        {selectedMenu === "myHalls" && (
-          <section className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-2xl font-semibold text-gray-800">My Halls</h3>
-              {!showForm && <button onClick={()=>setShowForm(true)} className="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 transition font-semibold">Register a New Hall</button>}
+{selectedMenu === "myHalls" && (
+  <section className="space-y-6">
+    <div className="flex items-center justify-between">
+      <h3 className="text-2xl font-semibold text-gray-800">My Halls</h3>
+      {!showForm && (
+        <button
+          onClick={() => setShowForm(true)}
+          className="bg-blue-600 text-white py-2 px-4 rounded-lg shadow hover:bg-blue-700 transition font-semibold"
+        >
+          Register a New Hall
+        </button>
+      )}
+    </div>
+
+    <div className="grid md:grid-cols-2 gap-6">
+      {halls.length === 0 ? (
+        <div className="bg-white p-6 rounded-xl shadow">No halls registered yet.</div>
+      ) : (
+        halls.map((h) => (
+          <div
+            key={h._id}
+            className="cursor-pointer bg-white p-5 rounded-xl shadow-sm border border-gray-100 transform transition hover:-translate-y-1 hover:shadow-md"
+            onClick={() => navigate(`/updatehall/${h._id}`)} // card click
+          >
+            <div className="flex justify-between items-start gap-4">
+              <div>
+                <h4 className="text-lg font-bold text-blue-800">{h.name}</h4>
+                <p className="text-sm text-gray-600 mt-1">{h.address}</p>
+                <div className="mt-3 text-sm text-gray-700">
+                  <div>
+                    Capacity: <span className="font-semibold">{h.capacity}</span>
+                  </div>
+                  <div>
+                    Price: <span className="font-semibold">₹{h.price}/day</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                {/* Stop propagation so button click doesn't trigger card click */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewBookings(h._id);
+                  }}
+                  className="px-3 py-1 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition"
+                >
+                  View Bookings
+                </button>
+              </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {halls.length === 0 ? (
-                <div className="bg-white p-6 rounded-xl shadow">No halls registered yet.</div>
-              ) : (
-                halls.map(h => (
-                  <div key={h._id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 transform transition hover:-translate-y-1 hover:shadow-md">
-                    <div className="flex justify-between items-start gap-4">
-                      <div>
-                        <h4 className="text-lg font-bold text-blue-800">{h.name}</h4>
-                        <p className="text-sm text-gray-600 mt-1">{h.address}</p>
-                        <div className="mt-3 text-sm text-gray-700">
-                          <div>Capacity: <span className="font-semibold">{h.capacity}</span></div>
-                          <div>Price: <span className="font-semibold">₹{h.price}/day</span></div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col items-end gap-2">
-                        <button onClick={()=>handleViewBookings(h._id)} className="px-3 py-1 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition">View Bookings</button>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 text-xs text-gray-500">
-                      <div><strong>Amenities:</strong> {(h.amenities || []).join(", ") || "—"}</div>
-                      <div className="mt-1"><strong>Operating Days:</strong> {(h.daysOpen || []).join(", ") || "—"}</div>
-                    </div>
-                  </div>
-                ))
-              )}
+            <div className="mt-3 text-xs text-gray-500">
+              <div>
+                <strong>Amenities:</strong> {(h.amenities || []).join(", ") || "—"}
+              </div>
+              <div className="mt-1">
+                <strong>Operating Days:</strong> {(h.daysOpen || []).join(", ") || "—"}
+              </div>
             </div>
+          </div>
+        ))
+      )}
+    </div>
 
-            {showForm && (
-              <form onSubmit={handleAddHall} className="mt-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4 max-w-2xl">
-                <h4 className="text-lg font-semibold text-gray-800">Register a New Hall</h4>
-                <input type="text" placeholder="Hall Name" value={hallName} onChange={e => setHallName(e.target.value)} required className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200" />
-                <input type="text" placeholder="Address" value={address} onChange={e => setAddress(e.target.value)} className="w-full px-4 py-2 border border-gray-200 rounded-lg" />
-                <div className="grid grid-cols-2 gap-3">
-                  <input type="number" placeholder="Capacity" value={capacity} onChange={e => setCapacity(e.target.value)} required className="w-full px-4 py-2 border border-gray-200 rounded-lg" />
-                  <input type="number" placeholder="Price per Day" value={price} onChange={e => setPrice(e.target.value)} required className="w-full px-4 py-2 border border-gray-200 rounded-lg" />
-                </div>
+    {showForm && (
+      <form
+        onSubmit={handleAddHall}
+        className="mt-6 bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4 max-w-2xl"
+      >
+        <h4 className="text-lg font-semibold text-gray-800">Register a New Hall</h4>
+        <input
+          type="text"
+          placeholder="Hall Name"
+          value={hallName}
+          onChange={(e) => setHallName(e.target.value)}
+          required
+          className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200"
+        />
+        <label className="block mb-2 font-medium text-gray-700">Hall Image</label>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setImage(e.target.files[0])}
+          required
+          className="w-full px-2 py-2 border border-gray-200 rounded-lg"
+        />
 
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">Amenities</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {amenitiesOptions.map(a => (
-                      <label key={a} className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" checked={amenities.includes(a)} onChange={() => toggleAmenity(a)} className="accent-blue-600" />
-                        <span>{a}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+        <input
+          type="text"
+          placeholder="Address"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
+          className="w-full px-4 py-2 border border-gray-200 rounded-lg"
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="number"
+            placeholder="Capacity"
+            value={capacity}
+            onChange={(e) => setCapacity(e.target.value)}
+            required
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg"
+          />
+          <input
+            type="number"
+            placeholder="Price per Day"
+            value={price}
+            onChange={(e) => setPrice(e.target.value)}
+            required
+            className="w-full px-4 py-2 border border-gray-200 rounded-lg"
+          />
+        </div>
 
-                <div>
-                  <label className="block mb-2 font-medium text-gray-700">Operating Days</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {daysOfWeek.map(d => (
-                      <label key={d} className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" checked={daysOpen.includes(d)} onChange={() => toggleDay(d)} className="accent-purple-600" />
-                        <span>{d}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
+        <div>
+          <label className="block mb-2 font-medium text-gray-700">Amenities</label>
+          <div className="grid grid-cols-2 gap-2">
+            {amenitiesOptions.map((a) => (
+              <label key={a} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={amenities.includes(a)}
+                  onChange={() => toggleAmenity(a)}
+                  className="accent-blue-600"
+                />
+                <span>{a}</span>
+              </label>
+            ))}
+          </div>
+        </div>
 
-                <div className="flex gap-4">
-                  <button type="submit" className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition font-semibold">Add Hall</button>
-                  <button type="button" onClick={()=>setShowForm(false)} className="bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition">Cancel</button>
-                </div>
-              </form>
-            )}
-          </section>
-        )}
+        <div>
+          <label className="block mb-2 font-medium text-gray-700">Operating Days</label>
+          <div className="grid grid-cols-2 gap-2">
+            {daysOfWeek.map((d) => (
+              <label key={d} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={daysOpen.includes(d)}
+                  onChange={() => toggleDay(d)}
+                  className="accent-purple-600"
+                />
+                <span>{d}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex gap-4">
+          <button
+            type="submit"
+            className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition font-semibold"
+          >
+            Add Hall
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForm(false)}
+            className="bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition"
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    )}
+  </section>
+)}
 
         {/* Bookings */}
         {selectedMenu === "bookings" && (
